@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <title>عرض بيانات الحجز</title>
+  <style>
+    #message {
+      color: green;
+      font-weight: bold;
+      display: none;
+    }
+    body {
+      width: 95%;
+      margin: auto;
+      background-color: #f5e947e8;
+    }
+    .table {
+      border: 2px solid blue;
+    }
+    .table th,
+    .table td,
+    .table thead th {
+      border: 1px solid blue;
+    }
+  </style>
+</head>
+<body>
+   <section class="section">
+    <div class="container">
+      <h1 class="title">عرض بيانات الحجز</h1>
+
+      <div class="field">
+        <label class="label">البحث بالتاريخ</label>
+        <div class="control">
+          <input id="search-date" class="input" type="date" placeholder="اختر تاريخ">
+        </div>
+      </div>
+      <div class="control">
+        <button class="button is-primary" onclick="fetchData()">بحث</button>
+        <button class="button is-secondary" onclick="fetchData(true)">عرض الكل</button>
+      </div>
+
+      <p id="message">جاري التحميل رجاء الانتظار .......</p>
+      
+      <table class="table is-fullwidth is-striped" style="width: 65%;">
+        <thead>
+          <tr>
+            <th>اسم المؤسسة</th>
+            <th>عدد الزوار</th>
+            <th>تاريخ الزيارة</th>
+            <th>اسم المشرف</th>
+            <th>رقم التواصل</th>
+          </tr>
+        </thead>
+        <tbody id="data-table">
+        </tbody>
+      </table>
+
+      <!-- زر لمسح البيانات -->
+      <div class="control" style="margin-top: 20px;">
+        <button class="button is-danger" onclick="clearData()">مسح البيانات</button>
+      </div>
+      
+    </div>
+  </section>
+
+  <script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbzAJA-yMQiTghCtMM5COcE23dTWpVMDUEogTNc4BW_VZA9F4_g-o0REZm2vnl3Vyx1e/exec';
+
+    function fetchData(showAll = false) {
+      let url = scriptUrl;
+      const searchDate = document.getElementById('search-date').value;
+      const messageElement = document.getElementById('message');
+
+      if (!showAll && searchDate) {
+        url += `?date=${searchDate}`;
+      }
+
+      messageElement.style.display = 'block';
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const tableBody = document.getElementById('data-table');
+          tableBody.innerHTML = '';
+          data.forEach(row => {
+            const tr = document.createElement('tr');
+            // تحديد الأعمدة التي نريد عرضها فقط
+            const keysToInclude = ['Schol_name', 'Stu_num', 'Visit_Date', 'Suber_v', 'Phone_Num'];
+            keysToInclude.forEach(key => {
+              const td = document.createElement('td');
+              td.textContent = row[key];
+              tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+          });
+          messageElement.style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          messageElement.textContent = 'حدث خطأ أثناء جلب البيانات';
+          messageElement.style.display = 'block';
+        });
+    }
+
+    function clearData() {
+  // عرض رسالة تحذيرية
+  const confirmation = confirm('هل أنت متأكد أنك تريد مسح جميع البيانات؟');
+  if (confirmation) {
+    fetch(scriptUrl + '?clearData=true')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('تم مسح البيانات بنجاح');
+          fetchData(); // إعادة جلب البيانات بعد المسح
+        } else {
+          alert('حدث خطأ أثناء مسح البيانات');
+        }
+      })
+      .catch(error => {
+        console.error('Error clearing data:', error);
+        alert('حدث خطأ أثناء مسح البيانات');
+      });
+  }
+}
+
+    
+  </script>
+</body>
+</html>
